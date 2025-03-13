@@ -60,11 +60,13 @@ st.sidebar.success("🔑 API Key inserida com sucesso!")
 # Limpeza do banco ao recarregar a página
 @st.cache_resource
 def get_chroma_client():
-    db_path = "./chromadb"
+    db_path = "/tmp/chromadb"
 
-    # Limpa a pasta do ChromaDB manualmente na inicialização
+    # Limpa a pasta do ChromaDB na inicialização
     if os.path.exists(db_path):
         shutil.rmtree(db_path)
+
+    os.makedirs(db_path, exist_ok=True)
 
     client = chromadb.PersistentClient(path=db_path)
     return client
