@@ -11,6 +11,7 @@ import pandas as pd
 import plotly.express as px
 import fitz
 from docx import Document
+import os
 
 # Configuração Inicial
 st.set_page_config(page_title="Sulfuras - Chatbot Inteligente", layout="wide")
@@ -58,11 +59,17 @@ st.sidebar.success("🔑 API Key inserida com sucesso!")
 # Limpeza do banco ao recarregar a página
 @st.cache_resource
 def get_chroma_client():
-    client = chromadb.PersistentClient(path="./chromadb")
-    client.reset()  # Limpeza do banco sempre ao atualizar a página
+    db_path = "./chromadb"
+
+    # Limpa a pasta do ChromaDB manualmente na inicialização
+    if os.path.exists(db_path):
+        shutil.rmtree(db_path)
+
+    client = chromadb.PersistentClient(path=db_path)
     return client
 
 chroma_client = get_chroma_client()
+
 # Modelo embeddings
 @st.cache_resource
 def load_embedding_model():
