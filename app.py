@@ -21,15 +21,12 @@ st.set_page_config(page_title="Sulfuras - Chatbot Inteligente", layout="wide")
 st.sidebar.header("🔑 Configuração da API")
 groq_api_key = st.sidebar.text_input("Insira sua API Key", type="password")
 
-
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
 st.title("🔨 Sulfuras: Chatbot Inteligente com Contexto")
-    
 
 if not groq_api_key:
-    # Exibir imagem na parte principal
     col_texto, col_imagem = st.columns([2, 1])
 
     with col_texto:
@@ -55,21 +52,13 @@ if not groq_api_key:
 client = Groq(api_key=groq_api_key)
 st.sidebar.success("🔑 API Key inserida com sucesso!")
 
-
-
-# Limpeza do banco ao recarregar a página
+# Cliente ChromaDB
 @st.cache_resource
 def get_chroma_client():
     db_path = "/tmp/chromadb"
-
-    # Limpa a pasta do ChromaDB na inicialização
-    if os.path.exists(db_path):
-        shutil.rmtree(db_path)
-
-    os.makedirs(db_path, exist_ok=True)
-
-    client = chromadb.PersistentClient(path=db_path)
-    return client
+    if not os.path.exists(db_path):
+        os.makedirs(db_path)
+    return chromadb.PersistentClient(path=db_path)
 
 chroma_client = get_chroma_client()
 
@@ -80,7 +69,6 @@ def load_embedding_model():
 
 embed_model = load_embedding_model()
 
-# Coleção
 collection = chroma_client.get_or_create_collection(
     name="document_embeddings",
     embedding_function=embedding_functions.SentenceTransformerEmbeddingFunction(model_name="all-MiniLM-L6-v2")
@@ -114,51 +102,35 @@ if uploaded_file:
 
     embeddings = embed_model.encode(text).tolist()
     collection.add(ids=[uploaded_file.name], documents=[text], embeddings=[embeddings])
-    st.sidebar.success("Documento processado e armazenado!")
+    st.sidebar.success(f"Documento '{uploaded_file.name}' processado e armazenado!")
 
 # Ver documentos armazenados
-# Sidebar - Visualização dos documentos armazenados
 if st.sidebar.button("📚 Ver documentos armazenados"):
     docs = collection.get()
-    if docs and "documents" in docs and docs["documents"]:
-        st.sidebar.write("📌 Documentos no Banco Vetorial:")
-        for doc_id, doc_text in zip(docs["ids"], docs["documents"]):
-            st.sidebar.text_area(f"{doc_id}", value=doc_text, height=150, disabled=True)
+    if docs["ids"]:
+        st.sidebar.write("📌 Documentos armazenados:")
+        for doc_id in docs["ids"]:
+            st.sidebar.write(f"- {doc_id}")
     else:
-        st.sidebar.write("Nenhum documento encontrado no banco vetorial.")
+        st.sidebar.write("Nenhum documento encontrado no banco.")
 
-# Adicionando rodapé logo abaixo do botão
-st.sidebar.markdown("""
----
-Desenvolvido por: Filipe S. Campos, Rafael Canuto, Tatiana H., Hermes e Vinicius.  
-Orientador: M.e Weslley Rodrigues.
-""")
+# Limpar banco de dados manualmente
+if st.sidebar.button("🗑️ Limpar banco de dados"):
+    shutil.rmtree("/tmp/chromadb")
+    os.makedirs("/tmp/chromadb", exist_ok=True)
+    st.sidebar.success("Banco de dados limpo com sucesso!")
 
+# Exibir histórico de mensagens
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
 # Chat Input
-# Chat input do usuário
 if prompt := st.chat_input("Faça sua pergunta sobre o documento ou qualquer assunto:"):
-
-    # 1. Mensagem do usuário adicionada ao histórico imediatamente
     st.session_state.messages.append({"role": "user", "content": prompt})
-    
-    # 2. Exibir imediatamente mensagem do usuário
-    with st.chat_message("user"):
-        st.markdown(prompt)
 
-    if uploaded_file:
-        query_embedding = embed_model.encode(prompt).tolist()
-        results = collection.query(query_embeddings=[query_embedding], n_results=1)
-
-        if results["documents"] and results["documents"][0]:
-            contexto_documento = results["documents"][0][0]
-        else:
-            contexto_documento = "Sem contexto disponível."
-    else:
-        contexto_documento = "Sem documento carregado. Respondendo sem contexto específico."
+    docs = collection.get()
+    contextos = "\n".join([f"{doc_id}: {doc[:500]}..." for doc_id, doc in zip(docs["ids"], docs["documents"])]) if docs["documents"] else "Nenhum documento carregado."
 
     historico = "\n".join([f'{msg["role"].capitalize()}: {msg["content"]}' for msg in st.session_state.messages])
 
@@ -166,7 +138,7 @@ if prompt := st.chat_input("Faça sua pergunta sobre o documento ou qualquer ass
     Você é Sulfuras assistente inteligente, profissional e divertido criado por Filipe Sampaio. Responda a pergunta abaixo com base no contexto fornecido.
 
     Contexto:
-    {contexto_documento}
+    {contextos}
 
     Histórico:
     {historico}
@@ -177,25 +149,21 @@ if prompt := st.chat_input("Faça sua pergunta sobre o documento ou qualquer ass
     Resposta detalhada:
     """
 
-    # 3. Gerar resposta do chatbot
     try:
         with st.spinner("Gerando resposta..."):
             resposta = client.chat.completions.create(
-                messages=[
-                    {"role": "system", "content": "Você é um assistente inteligente, profissional e divertido."},
-                    {"role": "user", "content": prompt_final}
-                ],
+                messages=[{"role": "system", "content": "Você é um assistente inteligente, profissional e divertido."},
+                          {"role": "user", "content": prompt_final}],
                 model="llama3-8b-8192",
                 temperature=0.5,
                 max_tokens=2048
             ).choices[0].message.content
 
     except Exception as e:
-        resposta = f"⚠️ Ocorreu um erro ao acessar o Groq: {str(e)}"
+        resposta = f"⚠️ Erro ao acessar o Groq: {str(e)}"
 
-    # 4. Adicionar resposta ao histórico
     st.session_state.messages.append({"role": "assistant", "content": resposta})
 
-    # 5. Exibir imediatamente resposta do chatbot
     with st.chat_message("assistant"):
         st.markdown(resposta)
+
