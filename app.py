@@ -53,29 +53,32 @@ if not groq_api_key:
 client = Groq(api_key=groq_api_key)
 st.sidebar.success("🔑 API Key inserida com sucesso!")
 
-# Carregar documento após logado
-uploaded_file = st.sidebar.file_uploader("📂 Carregar documento", type=["pdf", "docx", "csv"])
 
-# Carregar modelo embeddings
+
+# Limpeza do banco ao recarregar a página
+@st.cache_resource
+def get_chroma_client():
+    client = chromadb.PersistentClient(path="./chromadb")
+    client.reset()  # Limpeza do banco sempre ao atualizar a página
+    return client
+
+chroma_client = get_chroma_client()
+# Modelo embeddings
 @st.cache_resource
 def load_embedding_model():
     return SentenceTransformer('all-MiniLM-L6-v2')
 
 embed_model = load_embedding_model()
 
-# ChromaDB
-@st.cache_resource
-def get_chroma_client():
-    client = chromadb.PersistentClient(path="./chromadb")
-    return client
-
-chroma_client = get_chroma_client()
+# Coleção
 collection = chroma_client.get_or_create_collection(
     name="document_embeddings",
-    embedding_function=embedding_functions.SentenceTransformerEmbeddingFunction(
-        model_name="all-MiniLM-L6-v2"
-    )
+    embedding_function=embedding_functions.SentenceTransformerEmbeddingFunction(model_name="all-MiniLM-L6-v2")
 )
+
+# Carregar documento após logado
+uploaded_file = st.sidebar.file_uploader("📂 Carregar documento", type=["pdf", "docx", "csv"])
+
 # Processar documento
 if uploaded_file:
     if uploaded_file.type == "application/pdf":
@@ -150,7 +153,7 @@ if prompt := st.chat_input("Faça sua pergunta sobre o documento ou qualquer ass
     historico = "\n".join([f'{msg["role"].capitalize()}: {msg["content"]}' for msg in st.session_state.messages])
 
     prompt_final = f"""
-    Você é um assistente inteligente, profissional e divertido. Responda a pergunta abaixo com base no contexto fornecido.
+    Você é Sulfuras assistente inteligente, profissional e divertido criado por Filipe Sampaio. Responda a pergunta abaixo com base no contexto fornecido.
 
     Contexto:
     {contexto_documento}
