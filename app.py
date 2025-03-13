@@ -51,23 +51,21 @@ if not groq_api_key:
 client = Groq(api_key=groq_api_key)
 st.sidebar.success("🔑 API Key inserida com sucesso!")
 
-def criar_chroma_cliente_e_colecao():
-    db_path = "/tmp/chromadb"
-    if not os.path.exists(db_path):
-        os.makedirs(db_path, exist_ok=True)
-
-    chroma_client = chromadb.PersistentClient(path=db_path)
-
-    # Força criação correta da coleção e tabelas internas
-    collection = chroma_client.get_or_create_collection(
-        name="document_embeddings",
-        embedding_function=embedding_functions.SentenceTransformerEmbeddingFunction(
-            model_name="all-MiniLM-L6-v2"
+def get_chroma_client():
+    try:
+        chroma_client = chromadb.HttpClient(host="localhost", port=8000)
+        collection = chroma_client.get_or_create_collection(
+            name="document_embeddings",
+            embedding_function=embedding_functions.SentenceTransformerEmbeddingFunction(
+                model_name="all-MiniLM-L6-v2"
+            )
         )
-    )
-    return chroma_client, collection
+        return chroma_client, collection
+    except Exception as e:
+        st.error(f"Erro ao conectar ao ChromaDB: {e}")
+        return None, None
 
-chroma_client, collection = criar_chroma_cliente_e_colecao()
+chroma_client, collection = get_chroma_client()
 
 
 # Modelo Embedding
@@ -105,13 +103,14 @@ if uploaded_file:
     st.sidebar.success("Documento processado e armazenado!")
 
 # Botão que limpa e recria explicitamente o banco ChromaDB
-# Botão para limpar e recriar completamente o banco
 if st.sidebar.button("🗑️ Limpar banco de dados"):
-    shutil.rmtree("/tmp/chromadb", ignore_errors=True)
-    os.makedirs("/tmp/chromadb", exist_ok=True)
-    chroma_client, collection = criar_chroma_cliente_e_colecao()
-    st.sidebar.success("Banco de dados limpo e recriado com sucesso!")
-    st.rerun()
+    try:
+        chroma_client.reset()  # Reseta o banco via API
+        chroma_client, collection = get_chroma_client()  # Recria cliente e coleção
+        st.sidebar.success("Banco de dados limpo e reinicializado com sucesso!")
+        st.rerun()
+    except Exception as e:
+        st.error(f"Erro ao limpar banco: {e}")
 
 # Exibir documentos armazenados
 if st.sidebar.button("📚 Ver documentos armazenados"):
