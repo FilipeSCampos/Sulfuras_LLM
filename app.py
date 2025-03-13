@@ -52,60 +52,35 @@ if not groq_api_key:
 client = Groq(api_key=groq_api_key)
 st.sidebar.success("🔑 API Key inserida com sucesso!")
 
+# Cliente ChromaDB robusto
 def get_chroma_client():
     db_path = "/tmp/chromadb"
     if not os.path.exists(db_path):
         os.makedirs(db_path, exist_ok=True)
+    return chromadb.PersistentClient(path=db_path)
 
-    try:
-        client = chromadb.PersistentClient(path=db_path)
-        # teste simples para garantir a existência das tabelas necessárias
-        client.get_or_create_collection(name="temp_collection_for_init")
-        return client
-    except Exception:
-        # recria a pasta novamente se falhar a inicialização
-        if os.path.exists(db_path):
-            shutil.rmtree(db_path)
-        os.makedirs(db_path, exist_ok=True)
-        client = chromadb.PersistentClient(path=db_path)
-        client.get_or_create_collection(name="temp_collection_for_init")
-        return client
-
+# Inicializa cliente
 chroma_client = get_chroma_client()
 
-#modelo tf
+# Modelo embeddings
 @st.cache_resource
 def load_embedding_model():
     return SentenceTransformer('all-MiniLM-L6-v2')
 
 embed_model = load_embedding_model()
 
-# Criação da coleção correta após inicialização segura
-collection = chroma_client.get_or_create_collection(
-    name="document_embeddings",
-    embedding_function=embedding_functions.SentenceTransformerEmbeddingFunction(model_name="all-MiniLM-L6-v2")
-)
-
-# Criação segura da coleção com verificação
-def get_collection(client):
-    try:
-        return client.get_or_create_collection(
-            name="document_embeddings",
-            embedding_function=embedding_functions.SentenceTransformerEmbeddingFunction(
-                model_name="all-MiniLM-L6-v2"
-            )
+# Criação robusta e garantida da coleção
+def get_collection():
+    return chroma_client.get_or_create_collection(
+        name="document_embeddings",
+        embedding_function=embedding_functions.SentenceTransformerEmbeddingFunction(
+            model_name="all-MiniLM-L6-v2"
         )
-    except Exception:
-        # Caso erro, recrie o cliente novamente e então a coleção
-        client = get_chroma_client()
-        return client.get_or_create_collection(
-            name="document_embeddings",
-            embedding_function=embedding_functions.SentenceTransformerEmbeddingFunction(
-                model_name="all-MiniLM-L6-v2"
-            )
-        )
+    )
 
-collection = get_collection(chroma_client)
+collection = get_collection()
+
+
 
 # Carregar documento após logado
 uploaded_file = st.sidebar.file_uploader("📂 Carregar documento", type=["pdf", "docx", "csv"])
@@ -147,13 +122,16 @@ if st.sidebar.button("📚 Ver documentos armazenados"):
     else:
         st.sidebar.write("Nenhum documento encontrado no banco.")
 
-# Limpar banco manualmente com botão do Streamlit
+# Botão que limpa banco e força recriação imediata
 if st.sidebar.button("🗑️ Limpar banco de dados"):
     db_path = "/tmp/chromadb"
     shutil.rmtree(db_path, ignore_errors=True)
     os.makedirs(db_path, exist_ok=True)
-    st.cache_resource.clear()  # Força o Streamlit recriar recursos em cache
+    st.cache_resource.clear()  # Limpa cache do Streamlit completamente
+    chroma_client = get_chroma_client()  # Recria explicitamente cliente
+    collection = get_collection()        # Recria explicitamente coleção
     st.sidebar.success("Banco de dados limpo com sucesso!")
+    st.rerun()  # Recarrega a aplicação imediatamente após limpeza
 
 # Exibir histórico de mensagens
 for message in st.session_state.messages:
