@@ -12,6 +12,7 @@ import plotly.express as px
 import fitz
 from docx import Document
 import os
+import shutil
 
 # Configuração Inicial
 st.set_page_config(page_title="Sulfuras - Chatbot Inteligente", layout="wide")
