@@ -52,21 +52,39 @@ if not groq_api_key:
 client = Groq(api_key=groq_api_key)
 st.sidebar.success("🔑 API Key inserida com sucesso!")
 
-# Cliente ChromaDB
 def get_chroma_client():
     db_path = "/tmp/chromadb"
     if not os.path.exists(db_path):
-        os.makedirs(db_path)
-    return chromadb.PersistentClient(path=db_path)
+        os.makedirs(db_path, exist_ok=True)
+
+    try:
+        client = chromadb.PersistentClient(path=db_path)
+        # teste simples para garantir a existência das tabelas necessárias
+        client.get_or_create_collection(name="temp_collection_for_init")
+        return client
+    except Exception:
+        # recria a pasta novamente se falhar a inicialização
+        if os.path.exists(db_path):
+            shutil.rmtree(db_path)
+        os.makedirs(db_path, exist_ok=True)
+        client = chromadb.PersistentClient(path=db_path)
+        client.get_or_create_collection(name="temp_collection_for_init")
+        return client
 
 chroma_client = get_chroma_client()
 
-# Modelo embeddings
+#modelo tf
 @st.cache_resource
 def load_embedding_model():
     return SentenceTransformer('all-MiniLM-L6-v2')
 
 embed_model = load_embedding_model()
+
+# Criação da coleção correta após inicialização segura
+collection = chroma_client.get_or_create_collection(
+    name="document_embeddings",
+    embedding_function=embedding_functions.SentenceTransformerEmbeddingFunction(model_name="all-MiniLM-L6-v2")
+)
 
 # Criação segura da coleção com verificação
 def get_collection(client):
@@ -129,12 +147,12 @@ if st.sidebar.button("📚 Ver documentos armazenados"):
     else:
         st.sidebar.write("Nenhum documento encontrado no banco.")
 
-# Limpar banco manualmente e recriar coleção corretamente
+# Limpar banco manualmente com botão do Streamlit
 if st.sidebar.button("🗑️ Limpar banco de dados"):
-    shutil.rmtree("/tmp/chromadb")
-    os.makedirs("/tmp/chromadb", exist_ok=True)
-    chroma_client = get_chroma_client()
-    collection = get_collection(chroma_client)
+    db_path = "/tmp/chromadb"
+    shutil.rmtree(db_path, ignore_errors=True)
+    os.makedirs(db_path, exist_ok=True)
+    st.cache_resource.clear()  # Força o Streamlit recriar recursos em cache
     st.sidebar.success("Banco de dados limpo com sucesso!")
 
 # Exibir histórico de mensagens
