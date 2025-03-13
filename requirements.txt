@@ -1,0 +1,9 @@
+pysqlite3-binary
+chromadb
+sentence-transformers
+groq
+streamlit
+pandas
+plotly
+pymupdf
+python-docx

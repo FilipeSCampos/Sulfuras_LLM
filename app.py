@@ -1,3 +1,7 @@
+__import__("pysqlite3")
+import sys
+sys.modules["sqlite3"] = sys.modules.pop("pysqlite3")
+
 import streamlit as st
 from groq import Groq
 from sentence_transformers import SentenceTransformer
@@ -43,7 +47,7 @@ if not groq_api_key:
         Orientador: M.e Weslley Rodrigues.
         """)
     with col_imagem:
-        st.image("assets\sulfurs.webp", use_container_width=True)
+        st.image("assets/sulfurs.webp", use_container_width=True)
     st.stop()
 
 client = Groq(api_key=groq_api_key)
@@ -62,14 +66,16 @@ embed_model = load_embedding_model()
 # ChromaDB
 @st.cache_resource
 def get_chroma_client():
-    return chromadb.Client()
+    client = chromadb.PersistentClient(path="./chromadb")
+    return client
 
 chroma_client = get_chroma_client()
 collection = chroma_client.get_or_create_collection(
     name="document_embeddings",
-    embedding_function=embedding_functions.SentenceTransformerEmbeddingFunction(model_name="all-MiniLM-L6-v2")
+    embedding_function=embedding_functions.SentenceTransformerEmbeddingFunction(
+        model_name="all-MiniLM-L6-v2"
+    )
 )
-
 # Processar documento
 if uploaded_file:
     if uploaded_file.type == "application/pdf":
