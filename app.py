@@ -26,11 +26,31 @@ if "messages" not in st.session_state:
 st.title("🔨 Sulfuras: Chatbot Inteligente com Contexto")
 
 if not groq_api_key:
+    col_texto, col_imagem = st.columns([2, 1])
+
+    with col_texto:
+        st.markdown("""
+        Este projeto é um chatbot inteligente capaz de compreender documentos carregados (PDF, DOCX ou CSV) e responder perguntas contextuais.
+
+        **Criado para TCC usando:**
+        - 🖥️ Streamlit para interface gráfica.
+        - 🤖 Groq (Llama) como modelo LLM.
+        - 🧠 ChromaDB para armazenamento vetorial.
+        - 📊 Análises visuais com Plotly.
+
+        **Insira sua API Key no painel lateral para começar.**
+
+        Desenvolvido por: Filipe S. Campos, Rafael Canuto, Tatiana H., Hermes e Vinicius.
+
+        Orientador: M.e Weslley Rodrigues.
+        """)
+    with col_imagem:
+        st.image("assets/sulfurs.webp", use_container_width=True)
     st.stop()
 
 client = Groq(api_key=groq_api_key)
+st.sidebar.success("🔑 API Key inserida com sucesso!")
 
-# Cliente ChromaDB robusto com validação
 def criar_chroma_cliente_e_colecao():
     db_path = "/tmp/chromadb"
     if not os.path.exists(db_path):
@@ -38,7 +58,7 @@ def criar_chroma_cliente_e_colecao():
 
     chroma_client = chromadb.PersistentClient(path=db_path)
 
-    # Garantir a criação correta da coleção e tabelas internas
+    # Força criação correta da coleção e tabelas internas
     collection = chroma_client.get_or_create_collection(
         name="document_embeddings",
         embedding_function=embedding_functions.SentenceTransformerEmbeddingFunction(
@@ -48,6 +68,7 @@ def criar_chroma_cliente_e_colecao():
     return chroma_client, collection
 
 chroma_client, collection = criar_chroma_cliente_e_colecao()
+
 
 # Modelo Embedding
 @st.cache_resource
@@ -84,10 +105,10 @@ if uploaded_file:
     st.sidebar.success("Documento processado e armazenado!")
 
 # Botão que limpa e recria explicitamente o banco ChromaDB
+# Botão para limpar e recriar completamente o banco
 if st.sidebar.button("🗑️ Limpar banco de dados"):
     shutil.rmtree("/tmp/chromadb", ignore_errors=True)
     os.makedirs("/tmp/chromadb", exist_ok=True)
-    st.cache_resource.clear()
     chroma_client, collection = criar_chroma_cliente_e_colecao()
     st.sidebar.success("Banco de dados limpo e recriado com sucesso!")
     st.rerun()
