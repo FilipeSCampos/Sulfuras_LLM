@@ -53,7 +53,6 @@ client = Groq(api_key=groq_api_key)
 st.sidebar.success("🔑 API Key inserida com sucesso!")
 
 # Cliente ChromaDB
-@st.cache_resource
 def get_chroma_client():
     db_path = "/tmp/chromadb"
     if not os.path.exists(db_path):
@@ -69,10 +68,26 @@ def load_embedding_model():
 
 embed_model = load_embedding_model()
 
-collection = chroma_client.get_or_create_collection(
-    name="document_embeddings",
-    embedding_function=embedding_functions.SentenceTransformerEmbeddingFunction(model_name="all-MiniLM-L6-v2")
-)
+# Criação segura da coleção com verificação
+def get_collection(client):
+    try:
+        return client.get_or_create_collection(
+            name="document_embeddings",
+            embedding_function=embedding_functions.SentenceTransformerEmbeddingFunction(
+                model_name="all-MiniLM-L6-v2"
+            )
+        )
+    except Exception:
+        # Caso erro, recrie o cliente novamente e então a coleção
+        client = get_chroma_client()
+        return client.get_or_create_collection(
+            name="document_embeddings",
+            embedding_function=embedding_functions.SentenceTransformerEmbeddingFunction(
+                model_name="all-MiniLM-L6-v2"
+            )
+        )
+
+collection = get_collection(chroma_client)
 
 # Carregar documento após logado
 uploaded_file = st.sidebar.file_uploader("📂 Carregar documento", type=["pdf", "docx", "csv"])
@@ -114,10 +129,12 @@ if st.sidebar.button("📚 Ver documentos armazenados"):
     else:
         st.sidebar.write("Nenhum documento encontrado no banco.")
 
-# Limpar banco de dados manualmente
+# Limpar banco manualmente e recriar coleção corretamente
 if st.sidebar.button("🗑️ Limpar banco de dados"):
     shutil.rmtree("/tmp/chromadb")
     os.makedirs("/tmp/chromadb", exist_ok=True)
+    chroma_client = get_chroma_client()
+    collection = get_collection(chroma_client)
     st.sidebar.success("Banco de dados limpo com sucesso!")
 
 # Exibir histórico de mensagens
