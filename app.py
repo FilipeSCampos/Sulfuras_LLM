@@ -114,7 +114,7 @@ if st.sidebar.button("🗑️ Limpar banco de dados"):
 
 # Exibir documentos armazenados
 if st.sidebar.button("📚 Ver documentos armazenados"):
-    docs = collection.get()
+    docs = collection.peek()
     if docs["ids"]:
         st.sidebar.write("📌 Documentos armazenados:")
         for doc_id in docs["ids"]:
