@@ -24,6 +24,8 @@ LOG_DIR = "./logs"
 if not os.path.exists(LOG_DIR):
     os.makedirs(LOG_DIR) 
 
+logHandler = logging.FileHandler(os.path.join(LOG_DIR, 'chatbot_interactions.log'))
+
 # Configuração do logger
 def setup_logger():
     logger = logging.getLogger('chatbot_logger')
@@ -246,4 +248,3 @@ if prompt := st.chat_input("Faça sua pergunta sobre o documento ou qualquer ass
     # Atualiza a interface para exibir a nova resposta
     st.rerun()
 
-logHandler = logging.FileHandler(os.path.join(LOG_DIR, 'chatbot_interactions.log'))
