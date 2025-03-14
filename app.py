@@ -98,8 +98,11 @@ embed_model = load_embedding_model()
 # Inicializar ChromaDB (usando armazenamento persistente)
 @st.cache_resource
 def get_chroma_client():
-    # Certifique-se de que o diretório "./chromadb" tem permissões adequadas
-    client = chromadb.PersistentClient(path="./chromadb")
+    path = "./chromadb"
+    # Garante que o diretório exista
+    if not os.path.exists(path):
+        os.makedirs(path)
+    client = chromadb.PersistentClient(path=path)
     return client
 
 chroma_client = get_chroma_client()
