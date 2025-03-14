@@ -13,12 +13,12 @@ import fitz
 from docx import Document
 import os
 import asyncio
+import json
 import shutil
 import time
 
 CHROMA_DB_PATH = "./chromadb"
-
-
+CHATS_FILE = "chats.json"
 
 # Configurar event loop (para evitar warnings com asyncio)
 try:
@@ -27,47 +27,69 @@ except RuntimeError:
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
 
-# Configuração da página
 st.set_page_config(page_title="Sulfuras - Chatbot Inteligente", layout="wide")
 
 # Sidebar: Configuração da API
-st.sidebar.header("🔑 Configuração da API")
 groq_api_key = st.sidebar.text_input("Insira sua API Key", type="password")
-
-# Inicializa o histórico de mensagens
-if "messages" not in st.session_state:
-    st.session_state.messages = []
-
-st.title("🔨 Sulfuras: Chatbot Inteligente com Contexto")
-
-# Se não houver API Key, exibe a tela inicial
 if not groq_api_key:
-    col_texto, col_imagem = st.columns([2, 1])
-    with col_texto:
-        st.markdown(
-            """
-            Este projeto é um chatbot inteligente capaz de compreender documentos carregados (PDF, DOCX ou CSV) e responder perguntas contextuais.
-            
-            **Criado para TCC usando:**
-            - 🖥️ Streamlit para interface gráfica.
-            - 🤖 Groq (Llama) como modelo LLM.
-            - 🧠 ChromaDB para armazenamento vetorial.
-            - 📊 Análises visuais com Plotly.
-            
-            **Insira sua API Key no painel lateral para começar.**
-            
-            Desenvolvido por: Filipe S. Campos, Rafael Canuto, Tatiana H., Hermes e Vinicius.
-            
-            Orientador: M.e Weslley Rodrigues.
-            """
-        )
-    with col_imagem:
-        st.image("assets/sulfurs.webp", use_container_width=True)
+    st.sidebar.warning("🔑 Insira sua API Key para continuar.")
     st.stop()
 
-# Inicializa o cliente Groq
 client = Groq(api_key=groq_api_key)
 st.sidebar.success("🔑 API Key inserida com sucesso!")
+
+# Gerenciamento de múltiplos chats
+def load_chats():
+    if os.path.exists(CHATS_FILE):
+        with open(CHATS_FILE, "r") as file:
+            return json.load(file)
+    return {}
+
+def save_chats():
+    with open(CHATS_FILE, "w") as file:
+        json.dump(st.session_state.chats, file)
+
+# Inicializa os chats se não existirem
+if "chats" not in st.session_state:
+    st.session_state.chats = load_chats()
+
+if "current_chat" not in st.session_state:
+    st.session_state.current_chat = None
+
+# Criar um novo chat
+def create_new_chat():
+    chat_name = st.sidebar.text_input("Nome do novo chat")
+    if st.sidebar.button("➕ Criar Chat") and chat_name:
+        if chat_name not in st.session_state.chats:
+            st.session_state.chats[chat_name] = []
+            st.session_state.current_chat = chat_name
+            save_chats()
+            st.experimental_rerun()
+        else:
+            st.sidebar.warning("Esse nome já existe!")
+
+# Excluir um chat
+def delete_chat(chat_name):
+    if chat_name in st.session_state.chats:
+        del st.session_state.chats[chat_name]
+        if st.session_state.current_chat == chat_name:
+            st.session_state.current_chat = None
+        save_chats()
+        st.experimental_rerun()
+
+# Seleção de chats existentes
+st.sidebar.subheader("📌 Seus Chats")
+for chat_name in list(st.session_state.chats.keys()):
+    col1, col2 = st.sidebar.columns([0.8, 0.2])
+    with col1:
+        if st.sidebar.button(chat_name):
+            st.session_state.current_chat = chat_name
+            st.experimental_rerun()
+    with col2:
+        if st.sidebar.button("❌", key=f"del_{chat_name}"):
+            delete_chat(chat_name)
+
+create_new_chat()
 
 # Função para processar o documento
 def process_document(uploaded_file):
@@ -91,40 +113,9 @@ def process_document(uploaded_file):
         text = ""
     return text
 
-# Carregar documento após login
 uploaded_file = st.sidebar.file_uploader("📂 Carregar documento", type=["pdf", "docx", "csv"])
 
-# Carregar o modelo de embeddings (cache para evitar recarregamento)
-@st.cache_resource
-def load_embedding_model():
-    return SentenceTransformer("all-MiniLM-L6-v2")
-
-embed_model = load_embedding_model()
-
-# Inicializar cliente ChromaDB (somente se a pasta existir)
-@st.cache_resource
-def get_chroma_client():
-    return chromadb.PersistentClient(path=CHROMA_DB_PATH)
-
-# Criar cliente ChromaDB
-chroma_client = get_chroma_client()
-collection = chroma_client.get_or_create_collection(
-    name="document_embeddings",
-    embedding_function=embedding_functions.SentenceTransformerEmbeddingFunction(
-        model_name="all-MiniLM-L6-v2"
-    )
-)
-
-# Processar documento se houver upload
-if uploaded_file:
-    text = process_document(uploaded_file)
-    if text:
-        embeddings = embed_model.encode(text).tolist()
-        collection.add(ids=[uploaded_file.name], documents=[text], embeddings=[embeddings])
-        st.sidebar.success("Documento processado e armazenado!")
-    else:
-        st.sidebar.error("Não foi possível extrair texto do documento.")
-
+# Funções para limpar e recriar o banco de dados
 def delete_chromadb_collection():
     try:
         chroma_client.delete_collection(name="document_embeddings")
@@ -134,7 +125,7 @@ def delete_chromadb_collection():
 
 def recreate_chromadb_collection():
     try:
-        global collection  # Certifique-se de que 'collection' seja acessível globalmente
+        global collection
         collection = chroma_client.get_or_create_collection(
             name="document_embeddings",
             embedding_function=embedding_functions.SentenceTransformerEmbeddingFunction(
@@ -149,69 +140,55 @@ if st.sidebar.button("🗑️ Limpar banco de dados"):
     delete_chromadb_collection()
     recreate_chromadb_collection()
 
-
-# Exibir documentos armazenados
-if st.sidebar.button("📚 Ver documentos armazenados"):
-    docs = collection.peek()
-    if docs.get("ids"):
-        st.sidebar.write("📌 Documentos armazenados:")
-        for doc_id in docs["ids"]:
-            st.sidebar.write(f"- {doc_id}")
-    else:
-        st.sidebar.write("Nenhum documento encontrado.")
-
-for message in st.session_state.messages:
-    with st.chat_message(message["role"]):
-        st.markdown(message["content"])
-
-# Input de mensagem para interação
-if prompt := st.chat_input("Faça sua pergunta sobre o documento ou qualquer assunto:"):
-    # Evita adicionar mensagens duplicadas
-    if not any(msg["content"] == prompt for msg in st.session_state.messages if msg["role"] == "user"):
-        st.session_state.messages.append({"role": "user", "content": prompt})
-
-    docs = collection.get()
-    contextos = (
-        "\n".join(
-            f"{doc_id}: {doc[:500]}..." for doc_id, doc in zip(docs["ids"], docs["documents"])
+# Markdown inicial
+if not st.session_state.current_chat:
+    col_texto, col_imagem = st.columns([2, 1])
+    with col_texto:
+        st.markdown(
+            """
+            Este projeto é um chatbot inteligente capaz de compreender documentos carregados (PDF, DOCX ou CSV) e responder perguntas contextuais.
+            
+            **Criado para TCC usando:**
+            - 🖥️ Streamlit para interface gráfica.
+            - 🤖 Groq (Llama) como modelo LLM.
+            - 🧠 ChromaDB para armazenamento vetorial.
+            - 📊 Análises visuais com Plotly.
+            
+            **Insira sua API Key no painel lateral para começar.**
+            
+            Desenvolvido por: Filipe S. Campos, Rafael Canuto, Tatiana H., Hermes e Vinicius.
+            
+            Orientador: M.e Weslley Rodrigues.
+            """
         )
-        if docs.get("documents")
-        else "Nenhum documento carregado."
-    )
-    historico = "\n".join(f'{msg["role"].capitalize()}: {msg["content"]}' for msg in st.session_state.messages)
+    with col_imagem:
+        st.image("assets/sulfurs.webp", use_container_width=True)
+    st.stop()
 
-    prompt_final = f"""
-    Você é Sulfuras, assistente inteligente criado por Filipe Sampaio. Responda com base no contexto fornecido.
-    
-    Contexto:
-    {contextos}
-    
-    Histórico:
-    {historico}
-    
-    Pergunta:
-    {prompt}
-    
-    Resposta detalhada:
-    """
-    
-    try:
-        with st.spinner("Gerando resposta..."):
-            resposta = client.chat.completions.create(
-                messages=[
-                    {"role": "system", "content": "Você é um assistente inteligente, profissional e divertido."},
-                    {"role": "user", "content": prompt_final}
-                ],
-                model="llama3-8b-8192",
-                temperature=0.5,
-                max_tokens=2048,
-            ).choices[0].message.content
-    except Exception as e:
-        resposta = f"⚠️ Ocorreu um erro ao acessar o Groq: {str(e)}"
+# Exibir chat selecionado
+if st.session_state.current_chat:
+    st.title(f"💬 Chat: {st.session_state.current_chat}")
+    messages = st.session_state.chats[st.session_state.current_chat]
+    for msg in messages:
+        with st.chat_message(msg["role"]):
+            st.markdown(msg["content"])
 
-    # Evita adicionar respostas duplicadas
-    if not any(msg["content"] == resposta for msg in st.session_state.messages if msg["role"] == "assistant"):
-        st.session_state.messages.append({"role": "assistant", "content": resposta})
-
-    # Atualiza a interface para exibir a nova resposta
-    st.rerun()
+    if prompt := st.chat_input("Faça sua pergunta..."):
+        messages.append({"role": "user", "content": prompt})
+        
+        # Geração da resposta
+        try:
+            with st.spinner("Gerando resposta..."):
+                resposta = client.chat.completions.create(
+                    messages=[{"role": "system", "content": "Você é um assistente inteligente."}] + messages,
+                    model="llama3-8b-8192",
+                    temperature=0.5,
+                    max_tokens=2048,
+                ).choices[0].message.content
+        except Exception as e:
+            resposta = f"⚠️ Erro ao acessar o Groq: {str(e)}"
+        
+        messages.append({"role": "assistant", "content": resposta})
+        st.session_state.chats[st.session_state.current_chat] = messages
+        save_chats()
+        st.experimental_rerun()
