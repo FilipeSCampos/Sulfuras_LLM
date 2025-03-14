@@ -56,26 +56,24 @@ st.sidebar.success("🔑 API Key inserida com sucesso!")
 # Carregar documento após logado
 uploaded_file = st.sidebar.file_uploader("📂 Carregar documento", type=["pdf", "docx", "csv"])
 
-# Carregar modelo embeddings
-@st.cache_resource
-def load_embedding_model():
-    return SentenceTransformer('all-MiniLM-L6-v2')
+from chromadb.config import Settings
 
-embed_model = load_embedding_model()
-
-# ChromaDB
 @st.cache_resource
 def get_chroma_client():
-    client = chromadb.PersistentClient(path="./chromadb")
-    return client
-
-chroma_client = get_chroma_client()
-collection = chroma_client.get_or_create_collection(
-    name="document_embeddings",
-    embedding_function=embedding_functions.SentenceTransformerEmbeddingFunction(
-        model_name="all-MiniLM-L6-v2"
-    )
-)
+    try:
+        settings = Settings(persist_directory="./chroma_db")
+        client = chromadb.Client(settings=settings)
+        collection = client.get_or_create_collection(
+            name="document_embeddings",
+            embedding_function=embedding_functions.SentenceTransformerEmbeddingFunction(
+                model_name="all-MiniLM-L6-v2"
+            )
+        )
+        return client, collection
+    except Exception as e:
+        st.error(f"Erro ao conectar ao ChromaDB: {e}")
+        return None, None
+    
 # Processar documento
 if uploaded_file:
     if uploaded_file.type == "application/pdf":
