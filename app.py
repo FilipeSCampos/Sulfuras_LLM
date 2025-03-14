@@ -51,9 +51,9 @@ if not groq_api_key:
 client = Groq(api_key=groq_api_key)
 st.sidebar.success("🔑 API Key inserida com sucesso!")
 
+# Função para obter o cliente do ChromaDB de forma local
 def get_chroma_client():
     try:
-        # Instancia o cliente local do ChromaDB
         chroma_client = chromadb.Client()
         collection = chroma_client.get_or_create_collection(
             name="document_embeddings",
@@ -66,13 +66,13 @@ def get_chroma_client():
         st.error(f"Erro ao conectar ao ChromaDB: {e}")
         return None, None
 
+# Chamada da função para definir os objetos globais
+chroma_client, collection = get_chroma_client()
 
-# Modelo Embedding
-@st.cache_resource
-def load_embedding_model():
-    return SentenceTransformer('all-MiniLM-L6-v2')
-
-embed_model = load_embedding_model()
+# Verifica se a coleção foi definida com sucesso
+if collection is None:
+    st.error("Não foi possível estabelecer a conexão com o ChromaDB. Verifique as configurações e tente novamente.")
+    st.stop()
 
 # Upload e processamento do documento
 uploaded_file = st.sidebar.file_uploader("📂 Carregar documento", type=["pdf", "docx", "csv"])
