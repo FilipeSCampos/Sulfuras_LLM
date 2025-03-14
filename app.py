@@ -68,8 +68,7 @@ from chromadb.config import Settings
 def get_chroma_client():
     try:
         from chromadb.config import Settings
-        # Não especifica persist_directory: modo efêmero
-        settings = Settings()
+        settings = Settings()  # ou Settings(persist_directory="./chroma_db") se preferir persistência
         client = chromadb.Client(settings=settings)
         collection = client.get_or_create_collection(
             name="document_embeddings",
@@ -83,6 +82,7 @@ def get_chroma_client():
         return None, None
 
 chroma_client, collection = get_chroma_client()
+
 
 # Verifica se a coleção foi definida com sucesso
 if collection is None:
