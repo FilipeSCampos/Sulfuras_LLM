@@ -120,11 +120,13 @@ if uploaded_file:
     else:
         st.sidebar.error("Não foi possível extrair texto do documento.")
 
-# Botão para limpar o banco de dados do ChromaDB
 if st.sidebar.button("🗑️ Limpar banco de dados"):
     try:
-        chroma_client.reset()  # Reseta o banco via API
-        st.sidebar.success("Banco de dados limpo e reinicializado com sucesso!")
+        import shutil
+        # Remove o diretório de dados do ChromaDB, se existir
+        if os.path.exists("./chromadb"):
+            shutil.rmtree("./chromadb")
+        st.sidebar.success("Banco de dados limpo com sucesso!")
         st.experimental_rerun()
     except Exception as e:
         st.error(f"Erro ao limpar banco: {e}")
@@ -147,7 +149,7 @@ for message in st.session_state.messages:
 # Input de mensagem para interação
 if prompt := st.chat_input("Faça sua pergunta sobre o documento ou qualquer assunto:"):
     st.session_state.messages.append({"role": "user", "content": prompt})
-    
+
     docs = collection.get()
     contextos = (
         "\n".join(
@@ -157,7 +159,7 @@ if prompt := st.chat_input("Faça sua pergunta sobre o documento ou qualquer ass
         else "Nenhum documento carregado."
     )
     historico = "\n".join(f'{msg["role"].capitalize()}: {msg["content"]}' for msg in st.session_state.messages)
-    
+
     prompt_final = f"""
     Você é Sulfuras, assistente inteligente criado por Filipe Sampaio. Responda com base no contexto fornecido.
     
@@ -185,7 +187,11 @@ if prompt := st.chat_input("Faça sua pergunta sobre o documento ou qualquer ass
             ).choices[0].message.content
     except Exception as e:
         resposta = f"⚠️ Ocorreu um erro ao acessar o Groq: {str(e)}"
-    
+
     st.session_state.messages.append({"role": "assistant", "content": resposta})
-    with st.chat_message("assistant"):
-        st.markdown(resposta)
+    st.experimental_rerun()  # Força a reexecução para atualizar a exibição
+
+# Loop para exibir todas as mensagens (executado após o input e a reexecução)
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        st.markdown(message["content"])
