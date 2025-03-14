@@ -68,7 +68,14 @@ from chromadb.config import Settings
 def get_chroma_client():
     try:
         from chromadb.config import Settings
-        settings = Settings()  # ou Settings(persist_directory="./chroma_db") se preferir persistência
+        # Escolha uma das duas opções abaixo, conforme sua necessidade:
+        
+        # Opção Efêmera:
+        # settings = Settings()
+        
+        # Opção Persistente:
+        settings = Settings(persist_directory="./chroma_db")
+        
         client = chromadb.Client(settings=settings)
         collection = client.get_or_create_collection(
             name="document_embeddings",
@@ -80,7 +87,7 @@ def get_chroma_client():
     except Exception as e:
         st.error(f"Erro ao conectar ao ChromaDB: {e}")
         return None, None
-
+        
 chroma_client, collection = get_chroma_client()
 
 
