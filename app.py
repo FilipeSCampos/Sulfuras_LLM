@@ -13,6 +13,7 @@ import fitz
 from docx import Document
 import os
 import asyncio
+import shutil
 
 # Configurar event loop (para evitar warnings com asyncio)
 try:
