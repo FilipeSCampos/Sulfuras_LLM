@@ -68,30 +68,21 @@ from chromadb.config import Settings
 def get_chroma_client():
     try:
         from chromadb.config import Settings
-        # Escolha uma das duas opções abaixo, conforme sua necessidade:
-        
-        # Opção Efêmera:
-        # settings = Settings()
-        
-        # Opção Persistente:
+
         settings = Settings(persist_directory="./chroma_db")
-        
         client = chromadb.Client(settings=settings)
         collection = client.get_or_create_collection(
             name="document_embeddings",
             embedding_function=embedding_functions.SentenceTransformerEmbeddingFunction(
                 model_name="all-MiniLM-L6-v2"
-            )
-        )
+    )
+)
         return client, collection
     except Exception as e:
         st.error(f"Erro ao conectar ao ChromaDB: {e}")
         return None, None
-        
+
 chroma_client, collection = get_chroma_client()
-
-
-# Verifica se a coleção foi definida com sucesso
 if collection is None:
     st.error("Não foi possível estabelecer a conexão com o ChromaDB. Verifique as configurações e tente novamente.")
     st.stop()
