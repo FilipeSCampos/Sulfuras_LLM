@@ -64,23 +64,24 @@ st.sidebar.success("🔑 API Key inserida com sucesso!")
 # Função para obter o cliente do ChromaDB de forma local
 from chromadb.config import Settings
 
+@st.cache_resource
 def get_chroma_client():
     try:
+        from chromadb.config import Settings
+        # Defina um diretório persistente para evitar o modo efêmero
         settings = Settings(persist_directory="./chroma_db")
-        chroma_client = chromadb.Client(settings=settings)
-        collection = chroma_client.get_or_create_collection(
+        client = chromadb.Client(settings=settings)
+        collection = client.get_or_create_collection(
             name="document_embeddings",
             embedding_function=embedding_functions.SentenceTransformerEmbeddingFunction(
                 model_name="all-MiniLM-L6-v2"
             )
         )
-        return chroma_client, collection
+        return client, collection
     except Exception as e:
         st.error(f"Erro ao conectar ao ChromaDB: {e}")
         return None, None
 
-
-# Chamada da função para definir os objetos globais
 chroma_client, collection = get_chroma_client()
 
 # Verifica se a coleção foi definida com sucesso
