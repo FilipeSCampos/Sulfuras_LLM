@@ -99,9 +99,8 @@ embed_model = load_embedding_model()
 @st.cache_resource
 def get_chroma_client():
     path = "./chromadb"
-    # Garante que o diretório exista
     if not os.path.exists(path):
-        os.makedirs(path)
+        os.makedirs(path)  # Cria o diretório se não existir
     client = chromadb.PersistentClient(path=path)
     return client
 
