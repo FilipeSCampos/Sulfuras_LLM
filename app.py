@@ -19,6 +19,7 @@ import time
 CHROMA_DB_PATH = "./chromadb"
 
 
+
 # Configurar event loop (para evitar warnings com asyncio)
 try:
     asyncio.get_running_loop()
@@ -100,14 +101,9 @@ def load_embedding_model():
 
 embed_model = load_embedding_model()
 
-# Inicializar ChromaDB (usando armazenamento persistente)
 # Inicializar cliente ChromaDB (somente se a pasta existir)
+@st.cache_resource
 def get_chroma_client():
-    # Certifica-se de que a pasta existe antes de criar o cliente
-    if not os.path.exists(CHROMA_DB_PATH):
-        os.makedirs(CHROMA_DB_PATH, exist_ok=True)
-        time.sleep(1)  # Aguarda um momento para evitar erros
-
     return chromadb.PersistentClient(path=CHROMA_DB_PATH)
 
 # Criar cliente ChromaDB
@@ -129,39 +125,18 @@ if uploaded_file:
     else:
         st.sidebar.error("Não foi possível extrair texto do documento.")
 
-# Função para resetar o banco e limpar o estado da sessão
-def reset_chromadb():
-    global chroma_client
+def clear_chromadb_collection():
     try:
-        # 1️⃣ Fechar cliente atual (se existir)
-        try:
-            del chroma_client
-        except NameError:
-            pass  # Cliente ainda não foi criado, então ignoramos
-
-        # 2️⃣ Apagar o banco de dados
-        if os.path.exists(CHROMA_DB_PATH):
-            shutil.rmtree(CHROMA_DB_PATH)  # Remove completamente o banco
-            time.sleep(2)  # Aguarda para garantir que o SO finalize a remoção
-        
-        # 3️⃣ Criar a pasta novamente antes de inicializar o cliente
-        os.makedirs(CHROMA_DB_PATH, exist_ok=True)
-
-        # 4️⃣ Criar um novo cliente e coleção
-        chroma_client = chromadb.PersistentClient(path=CHROMA_DB_PATH)
-        chroma_client.get_or_create_collection(name="document_embeddings")
-
-        # 5️⃣ Informar sucesso e reiniciar o app
-        st.success("Banco de dados resetado com sucesso!")
-        st.rerun()  # Reinicia o app para evitar erros de estado
-
+        # Deletar todos os documentos da coleção
+        collection.delete(where={})  # Apaga todos os itens sem precisar de IDs específicos
+        st.success("Todos os documentos foram removidos do banco de dados!")
     except Exception as e:
-        st.error(f"Erro ao limpar banco de dados: {e}")
+        st.error(f"Erro ao limpar coleção: {e}")
 
-# Botão para limpar banco de dados
-if st.sidebar.button("🗑️ Limpar banco de dados"):
-    reset_chromadb()
-    
+# Botão para limpar documentos do banco de dados
+if st.sidebar.button("🗑️ Limpar documentos do banco"):
+    clear_chromadb_collection()
+
 # Exibir documentos armazenados
 if st.sidebar.button("📚 Ver documentos armazenados"):
     docs = collection.peek()
