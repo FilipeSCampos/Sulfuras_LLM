@@ -15,36 +15,10 @@ import os
 import asyncio
 import shutil
 import time
-import logging
-from pythonjsonlogger import jsonlogger
 
 CHROMA_DB_PATH = "./chromadb"
 
-LOG_DIR = "./logs"
-if not os.path.exists(LOG_DIR):
-    os.makedirs(LOG_DIR) 
 
-logHandler = logging.FileHandler(os.path.join(LOG_DIR, 'chatbot_interactions.log'))
-
-# Configuração do logger
-def setup_logger():
-    logger = logging.getLogger('chatbot_logger')
-    logger.setLevel(logging.INFO)
-    logHandler = logging.FileHandler('chatbot_interactions.log')
-    formatter = jsonlogger.JsonFormatter()
-    logHandler.setFormatter(formatter)
-    logger.addHandler(logHandler)
-    return logger
-
-# Inicializa o logger
-logger = setup_logger()
-
-# Função para registrar interações
-def log_interaction(user_input, bot_response):
-    logger.info({
-        'user_input': user_input,
-        'bot_response': bot_response
-    })
 
 # Configurar event loop (para evitar warnings com asyncio)
 try:
@@ -196,9 +170,6 @@ if prompt := st.chat_input("Faça sua pergunta sobre o documento ou qualquer ass
     if not any(msg["content"] == prompt for msg in st.session_state.messages if msg["role"] == "user"):
         st.session_state.messages.append({"role": "user", "content": prompt})
 
-    # REGISTRA O INPUT DO USUÁRIO NO LOG
-    log_interaction(user_input=prompt, bot_response="Aguardando resposta...")
-
     docs = collection.get()
     contextos = (
         "\n".join(
@@ -238,13 +209,9 @@ if prompt := st.chat_input("Faça sua pergunta sobre o documento ou qualquer ass
     except Exception as e:
         resposta = f"⚠️ Ocorreu um erro ao acessar o Groq: {str(e)}"
 
-    # REGISTRA A RESPOSTA DO BOT NO LOG
-    log_interaction(user_input=prompt, bot_response=resposta)
-
     # Evita adicionar respostas duplicadas
     if not any(msg["content"] == resposta for msg in st.session_state.messages if msg["role"] == "assistant"):
         st.session_state.messages.append({"role": "assistant", "content": resposta})
 
     # Atualiza a interface para exibir a nova resposta
     st.rerun()
-
