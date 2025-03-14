@@ -129,7 +129,7 @@ if st.sidebar.button("🗑️ Limpar banco de dados"):
         if os.path.exists("./chromadb"):
             shutil.rmtree("./chromadb")
         st.sidebar.success("Banco de dados limpo com sucesso!")
-        st.experimental_rerun()
+        st.rerun()
     except Exception as e:
         st.error(f"Erro ao limpar banco: {e}")
 
