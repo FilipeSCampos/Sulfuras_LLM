@@ -102,9 +102,9 @@ embed_model = load_embedding_model()
 def get_chroma_client():
     path = "./chromadb"
     if not os.path.exists(path):
-        os.makedirs(path)  # Recria a pasta se não existir
-        time.sleep(1)  # Aguarda um momento para garantir que a pasta seja criada
-
+        os.makedirs(path)  # Garante que a pasta exista
+        time.sleep(1)  # Aguarda um momento antes de continuar
+    
     client = chromadb.PersistentClient(path=path)
     return client
 
