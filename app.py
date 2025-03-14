@@ -191,7 +191,7 @@ if prompt := st.chat_input("Faça sua pergunta sobre o documento ou qualquer ass
         resposta = f"⚠️ Ocorreu um erro ao acessar o Groq: {str(e)}"
 
     st.session_state.messages.append({"role": "assistant", "content": resposta})
-    st.experimental_rerun()  # Força a reexecução para atualizar a exibição
+    st.rerun()  # Força a reexecução para atualizar a exibição
 
 # Loop para exibir todas as mensagens (executado após o input e a reexecução)
 for message in st.session_state.messages:
