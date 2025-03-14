@@ -122,16 +122,26 @@ if uploaded_file:
     else:
         st.sidebar.error("Não foi possível extrair texto do documento.")
 
-if st.sidebar.button("🗑️ Limpar banco de dados"):
+# Função para resetar o banco e limpar o estado da sessão
+def reset_chromadb():
+    path = "./chromadb"
     try:
-        import shutil
-        # Remove o diretório de dados do ChromaDB, se existir
-        if os.path.exists("./chromadb"):
-            shutil.rmtree("./chromadb")
-        st.sidebar.success("Banco de dados limpo com sucesso!")
-        st.rerun()
+        if os.path.exists(path):
+            shutil.rmtree(path)  # Remove a pasta do ChromaDB
+        os.makedirs(path)  # Recria a pasta vazia
+        
+        # Limpar estado da sessão do Streamlit
+        st.session_state.clear()
+        st.session_state["messages"] = []  # Reinicializa histórico do chatbot
+        
+        st.success("Banco de dados resetado com sucesso!")
+        st.rerun()  # Força a reexecução do app para aplicar as mudanças
     except Exception as e:
-        st.error(f"Erro ao limpar banco: {e}")
+        st.error(f"Erro ao limpar banco de dados: {e}")
+
+# Botão para limpar banco de dados
+if st.sidebar.button("🗑️ Limpar banco de dados"):
+    reset_chromadb()
 
 # Exibir documentos armazenados
 if st.sidebar.button("📚 Ver documentos armazenados"):
