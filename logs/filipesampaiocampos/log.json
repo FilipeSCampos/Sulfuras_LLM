@@ -1,0 +1,62 @@
+[
+    {
+        "type": "chat",
+        "timestamp": "2025-03-14 15:24:20.706317",
+        "role": "user",
+        "message": "ola"
+    },
+    {
+        "type": "chat",
+        "timestamp": "2025-03-14 15:26:47.379681",
+        "role": "user",
+        "message": "oi"
+    },
+    {
+        "type": "chat",
+        "timestamp": "2025-03-14 15:29:46.776758",
+        "role": "user",
+        "message": "oi"
+    },
+    {
+        "type": "chat",
+        "timestamp": "2025-03-14 15:29:47.444365",
+        "role": "assistant",
+        "message": "\u26a0\ufe0f Ocorreu um erro ao acessar o Groq: Error code: 401 - {'error': {'message': 'Invalid API Key', 'type': 'invalid_request_error', 'code': 'invalid_api_key'}}"
+    },
+    {
+        "type": "chat",
+        "timestamp": "2025-03-14 15:34:15.952973",
+        "role": "user",
+        "message": "ola"
+    },
+    {
+        "type": "chat",
+        "timestamp": "2025-03-14 15:34:16.376359",
+        "role": "assistant",
+        "message": "Ol\u00e1! Eu sou Sulfuras, seu assistente inteligente!"
+    },
+    {
+        "type": "chat",
+        "timestamp": "2025-03-14 15:45:15.704808",
+        "role": "user",
+        "message": "oi"
+    },
+    {
+        "type": "chat",
+        "timestamp": "2025-03-14 15:45:16.318365",
+        "role": "assistant",
+        "message": "Ol\u00e1! Eu sou Sulfuras, seu assistente inteligente! Estou aqui para ajud\u00e1-lo em qualquer d\u00favida ou quest\u00e3o relacionada \u00e0 disciplina de Algebra Linear.\n\nVou come\u00e7ar por apresentar o plano de ensino da disciplina, que voc\u00ea j\u00e1 tem acesso. Em resumo, os objetivos da disciplina s\u00e3o:\n\n* Apresentar os fundamentos da algebra linear essenciais para a modelagem e resolu\u00e7\u00e3o de problemas em diversas \u00e1reas;\n* Desenvolver a habilidade de trabalhar com sistemas lineares, espa\u00e7os vetoriais e transforma\u00e7\u00f5es lineares;\n* Capacitar os alunos no uso de ferramentas e t\u00e9cnicas para resolver problemas de algebra linear.\n\nSe voc\u00ea tem alguma d\u00favida espec\u00edfica sobre a disciplina ou precisa de ajuda para entender um conceito, sinta-se \u00e0 vontade para perguntar! Estou aqui para ajud\u00e1-lo."
+    },
+    {
+        "type": "chat",
+        "timestamp": "2025-03-14 15:47:32.049282",
+        "role": "user",
+        "message": "oi"
+    },
+    {
+        "type": "chat",
+        "timestamp": "2025-03-14 15:47:32.806970",
+        "role": "assistant",
+        "message": "Ol\u00e1! Eu sou Sulfuras, um assistente inteligente criado por Filipe Sampaio. Estou aqui para ajud\u00e1-lo em qualquer coisa que precise. Se voc\u00ea n\u00e3o tem um documento carregado, podemos come\u00e7ar do zero! Qual \u00e9 o assunto que voc\u00ea gostaria de discutir ou resolver?"
+    }
+]

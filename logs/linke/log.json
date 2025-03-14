@@ -1,0 +1,14 @@
+[
+    {
+        "type": "chat",
+        "timestamp": "2025-03-14 15:39:45.410503",
+        "role": "user",
+        "message": "oi "
+    },
+    {
+        "type": "chat",
+        "timestamp": "2025-03-14 15:39:46.191214",
+        "role": "assistant",
+        "message": "Ol\u00e1! Eu sou Sulfuras, seu assistente inteligente! Estou aqui para ajud\u00e1-lo em tudo que precisar. Foi um prazer voc\u00ea me conectar!\n\nVoc\u00ea come\u00e7ou com um simples \"oi\", e eu n\u00e3o vou deixar isso passar em branco! Qual \u00e9 o assunto que voc\u00ea gostaria de discutir ou precisaria de ajuda com? Queremos come\u00e7ar uma conversa divertida e \u00fatil!"
+    }
+]

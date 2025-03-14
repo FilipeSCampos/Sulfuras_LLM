@@ -1,7 +1,3 @@
-__import__("pysqlite3")
-import sys
-sys.modules["sqlite3"] = sys.modules.pop("pysqlite3")
-
 import os
 import json
 import time
@@ -104,6 +100,24 @@ if not st.session_state.get("logged_in", False) or st.session_state.get("groq_ap
     
     st.stop()
 
+# Após a autenticação e antes de exibir as demais funcionalidades, adicione:
+if st.sidebar.button("Logout", key="logout_button"):
+    # Lista de chaves relacionadas à sessão do usuário
+    keys_to_clear = [
+        "logged_in",
+        "user_email",
+        "groq_api_key",
+        "chats",
+        "current_chat",
+        "chroma_client",
+        "collection"
+    ]
+    for key in keys_to_clear:
+        if key in st.session_state:
+            del st.session_state[key]
+    st.rerun()
+
+
 # --- Fluxo após a autenticação e configuração da API Key ---
 # Configurar o event loop para evitar warnings do asyncio
 try:
@@ -155,7 +169,10 @@ if st.session_state.current_chat:
         save_chats(st.session_state.chats, user_email)
         st.rerun()
 
-# Opção para upload de arquivos
+from utils.logging_manager import log_interaction
+user_email = st.session_state.user_email
+
+# --- Upload de Arquivos ---
 uploaded_file = st.sidebar.file_uploader("📂 Carregar documento", type=["pdf", "docx", "csv"])
 if uploaded_file:
     text = process_document(uploaded_file)
@@ -163,19 +180,34 @@ if uploaded_file:
         embeddings = SentenceTransformer(MODEL_NAME).encode(text).tolist()
         st.session_state.collection.add(ids=[uploaded_file.name], documents=[text], embeddings=[embeddings])
         st.sidebar.success("Documento processado e armazenado!")
+        # Log do arquivo enviado
+        log_interaction(user_email, {
+            "type": "file",
+            "timestamp": str(pd.Timestamp.now()),
+            "filename": uploaded_file.name,
+            "details": "Arquivo processado com sucesso."
+        })
     else:
         st.sidebar.error("Não foi possível extrair o texto do documento.")
 
-# Interface do Chat
+# --- Interface do Chat ---
 if st.session_state.current_chat:
     st.title(f"💬 Chat: {st.session_state.current_chat}")
     mensagens = st.session_state.chats[st.session_state.current_chat]
     for msg in mensagens:
         with st.chat_message(msg["role"]):
             st.markdown(msg["content"])
-
+    
     if prompt := st.chat_input("Faça sua pergunta..."):
+        # Log da pergunta do usuário
+        log_interaction(user_email, {
+            "type": "chat",
+            "timestamp": str(pd.Timestamp.now()),
+            "role": "user",
+            "message": prompt
+        })
         mensagens.append({"role": "user", "content": prompt})
+        
         docs = st.session_state.collection.get()
         contextos = (
             "\n".join(f"{doc_id}: {doc[:500]}..." for doc_id, doc in zip(docs["ids"], docs["documents"]))
@@ -210,6 +242,14 @@ if st.session_state.current_chat:
                 ).choices[0].message.content
         except Exception as e:
             resposta = f"⚠️ Ocorreu um erro ao acessar o Groq: {str(e)}"
+        
+        # Log da resposta do bot
+        log_interaction(user_email, {
+            "type": "chat",
+            "timestamp": str(pd.Timestamp.now()),
+            "role": "assistant",
+            "message": resposta
+        })
         mensagens.append({"role": "assistant", "content": resposta})
         st.session_state.chats[st.session_state.current_chat] = mensagens
         save_chats(st.session_state.chats, user_email)

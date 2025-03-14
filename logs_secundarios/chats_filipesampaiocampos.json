@@ -1,0 +1,12 @@
+{
+    "sd": [
+        {
+            "role": "user",
+            "content": "oi"
+        },
+        {
+            "role": "assistant",
+            "content": "Ol\u00e1! Eu sou Sulfuras, um assistente inteligente criado por Filipe Sampaio. Estou aqui para ajud\u00e1-lo em qualquer coisa que precise. Se voc\u00ea n\u00e3o tem um documento carregado, podemos come\u00e7ar do zero! Qual \u00e9 o assunto que voc\u00ea gostaria de discutir ou resolver?"
+        }
+    ]
+}
