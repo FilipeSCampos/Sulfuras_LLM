@@ -128,24 +128,36 @@ if uploaded_file:
 
 # Função para resetar o banco e limpar o estado da sessão
 def reset_chromadb():
-    path = "./chromadb"
+    path = "chromadb"
+    
     try:
+        # 1. Fechar todas as conexões do ChromaDB antes de apagar
+        global chroma_client
+        del chroma_client  # Remove a referência do cliente
+        time.sleep(1)  # Aguarda para garantir que conexões são fechadas
+
+        # 2. Apagar completamente a pasta do banco
         if os.path.exists(path):
             shutil.rmtree(path)  # Remove completamente o banco
             time.sleep(1)  # Aguarda um momento para evitar problemas de I/O
         
-        os.makedirs(path)  # Recria a pasta vazia
-        
-        # Limpar estado do Streamlit para evitar reprocessamento do último arquivo
-        st.session_state.clear()
-        st.session_state["messages"] = []  # Reseta histórico do chatbot
-        
-        # Criar novo cliente do ChromaDB e reiniciar coleção
-        chroma_client = chromadb.PersistentClient(path=path)
-        chroma_client.get_or_create_collection(name="document_embeddings")  # Garante que a coleção exista
+        # 3. Criar um novo diretório vazio
+        os.makedirs(path)
 
+        # 4. Resetar o estado do Streamlit para evitar reprocessamento do último arquivo
+        st.session_state.clear()
+        st.session_state["messages"] = []
+
+        # 5. Criar um novo cliente do ChromaDB
+        chroma_client = chromadb.PersistentClient(path=path)
+
+        # 6. Criar uma nova coleção
+        chroma_client.get_or_create_collection(name="document_embeddings")
+
+        # 7. Informar sucesso e reiniciar o app
         st.success("Banco de dados resetado com sucesso!")
-        st.rerun()  # Reinicia o app
+        st.rerun()  # Reinicia o app para garantir que tudo foi recriado corretamente
+
     except Exception as e:
         st.error(f"Erro ao limpar banco de dados: {e}")
 
