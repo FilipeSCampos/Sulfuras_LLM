@@ -33,6 +33,27 @@ st.set_page_config(page_title="Sulfuras - Chatbot Inteligente", layout="wide")
 groq_api_key = st.sidebar.text_input("Insira sua API Key", type="password")
 if not groq_api_key:
     st.sidebar.warning("🔑 Insira sua API Key para continuar.")
+    # Exibir imagem na parte principal
+    col_texto, col_imagem = st.columns([2, 1])
+
+    with col_texto:
+        st.markdown("""
+        Este projeto é um chatbot inteligente capaz de compreender documentos carregados (PDF, DOCX ou CSV) e responder perguntas contextuais.
+
+        **Criado para TCC usando:**
+        - 🖥️ Streamlit para interface gráfica.
+        - 🤖 Groq (Llama) como modelo LLM.
+        - 🧠 ChromaDB para armazenamento vetorial.
+        - 📊 Análises visuais com Plotly.
+
+        **Insira sua API Key no painel lateral para começar.**
+
+        Desenvolvido por: Filipe S. Campos, Rafael Canuto, Tatiana H., Hermes e Vinicius.
+
+        Orientador: M.e Weslley Rodrigues.
+        """)
+    with col_imagem:
+        st.image("assets\sulfurs.webp", use_container_width=True)
     st.stop()
 
 client = Groq(api_key=groq_api_key)
@@ -64,7 +85,7 @@ def create_new_chat():
             st.session_state.chats[chat_name] = []
             st.session_state.current_chat = chat_name
             save_chats()
-            st.experimental_rerun()
+            st.rerun()
         else:
             st.sidebar.warning("Esse nome já existe!")
 
@@ -75,7 +96,7 @@ def delete_chat(chat_name):
         if st.session_state.current_chat == chat_name:
             st.session_state.current_chat = None
         save_chats()
-        st.experimental_rerun()
+        st.rerun()
 
 # Seleção de chats existentes
 st.sidebar.subheader("📌 Seus Chats")
@@ -84,7 +105,7 @@ for chat_name in list(st.session_state.chats.keys()):
     with col1:
         if st.sidebar.button(chat_name):
             st.session_state.current_chat = chat_name
-            st.experimental_rerun()
+            st.rerun()
     with col2:
         if st.sidebar.button("❌", key=f"del_{chat_name}"):
             delete_chat(chat_name)
@@ -191,4 +212,4 @@ if st.session_state.current_chat:
         messages.append({"role": "assistant", "content": resposta})
         st.session_state.chats[st.session_state.current_chat] = messages
         save_chats()
-        st.experimental_rerun()
+        st.rerun()
