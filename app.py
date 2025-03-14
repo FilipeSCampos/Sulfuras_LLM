@@ -64,23 +64,28 @@ st.sidebar.success("🔑 API Key inserida com sucesso!")
 # Função para obter o cliente do ChromaDB de forma local
 from chromadb.config import Settings
 
-# Carregar modelo embeddings
-@st.cache_resource
-def load_embedding_model():
-    return SentenceTransformer('all-MiniLM-L6-v2')
-
-embed_model = load_embedding_model()
-
-# ChromaDB
 @st.cache_resource
 def get_chroma_client():
-    return chromadb.Client()
+    try:
+        from chromadb.config import Settings
 
-chroma_client = get_chroma_client()
-collection = chroma_client.get_or_create_collection(
-    name="document_embeddings",
-    embedding_function=embedding_functions.SentenceTransformerEmbeddingFunction(model_name="all-MiniLM-L6-v2")
+        settings = Settings(persist_directory="./chroma_db")
+        client = chromadb.Client(settings=settings)
+        collection = client.get_or_create_collection(
+            name="document_embeddings",
+            embedding_function=embedding_functions.SentenceTransformerEmbeddingFunction(
+                model_name="all-MiniLM-L6-v2"
+    )
 )
+        return client, collection
+    except Exception as e:
+        st.error(f"Erro ao conectar ao ChromaDB: {e}")
+        return None, None
+
+chroma_client, collection = get_chroma_client()
+if collection is None:
+    st.error("Não foi possível estabelecer a conexão com o ChromaDB. Verifique as configurações e tente novamente.")
+    st.stop()
 
 # Upload e processamento do documento
 uploaded_file = st.sidebar.file_uploader("📂 Carregar documento", type=["pdf", "docx", "csv"])
