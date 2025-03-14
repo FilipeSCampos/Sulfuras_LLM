@@ -14,6 +14,16 @@ from docx import Document
 import os
 import shutil
 
+
+
+import asyncio
+try:
+    asyncio.get_running_loop()
+except RuntimeError:
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+
+    
 st.set_page_config(page_title="Sulfuras - Chatbot Inteligente", layout="wide")
 
 # Sidebar API Key
@@ -52,9 +62,12 @@ client = Groq(api_key=groq_api_key)
 st.sidebar.success("🔑 API Key inserida com sucesso!")
 
 # Função para obter o cliente do ChromaDB de forma local
+from chromadb.config import Settings
+
 def get_chroma_client():
     try:
-        chroma_client = chromadb.Client()
+        settings = Settings(persist_directory="./chroma_db")
+        chroma_client = chromadb.Client(settings=settings)
         collection = chroma_client.get_or_create_collection(
             name="document_embeddings",
             embedding_function=embedding_functions.SentenceTransformerEmbeddingFunction(
@@ -65,6 +78,7 @@ def get_chroma_client():
     except Exception as e:
         st.error(f"Erro ao conectar ao ChromaDB: {e}")
         return None, None
+
 
 # Chamada da função para definir os objetos globais
 chroma_client, collection = get_chroma_client()
