@@ -16,6 +16,9 @@ import asyncio
 import shutil
 import time
 
+CHROMA_DB_PATH = "./chromadb"
+
+
 # Configurar event loop (para evitar warnings com asyncio)
 try:
     asyncio.get_running_loop()
@@ -98,16 +101,16 @@ def load_embedding_model():
 embed_model = load_embedding_model()
 
 # Inicializar ChromaDB (usando armazenamento persistente)
-@st.cache_resource
+# Inicializar cliente ChromaDB (somente se a pasta existir)
 def get_chroma_client():
-    path = "./chromadb"
-    if not os.path.exists(path):
-        os.makedirs(path)  # Garante que a pasta exista
-        time.sleep(1)  # Aguarda um momento antes de continuar
-    
-    client = chromadb.PersistentClient(path=path)
-    return client
+    # Certifica-se de que a pasta existe antes de criar o cliente
+    if not os.path.exists(CHROMA_DB_PATH):
+        os.makedirs(CHROMA_DB_PATH, exist_ok=True)
+        time.sleep(1)  # Aguarda um momento para evitar erros
 
+    return chromadb.PersistentClient(path=CHROMA_DB_PATH)
+
+# Criar cliente ChromaDB
 chroma_client = get_chroma_client()
 collection = chroma_client.get_or_create_collection(
     name="document_embeddings",
@@ -128,35 +131,29 @@ if uploaded_file:
 
 # Função para resetar o banco e limpar o estado da sessão
 def reset_chromadb():
-    path = "chromadb"
-    
+    global chroma_client
     try:
-        # 1. Fechar todas as conexões do ChromaDB antes de apagar
-        global chroma_client
-        del chroma_client  # Remove a referência do cliente
-        time.sleep(1)  # Aguarda para garantir que conexões são fechadas
+        # 1️⃣ Fechar cliente atual (se existir)
+        try:
+            del chroma_client
+        except NameError:
+            pass  # Cliente ainda não foi criado, então ignoramos
 
-        # 2. Apagar completamente a pasta do banco
-        if os.path.exists(path):
-            shutil.rmtree(path)  # Remove completamente o banco
-            time.sleep(1)  # Aguarda um momento para evitar problemas de I/O
+        # 2️⃣ Apagar o banco de dados
+        if os.path.exists(CHROMA_DB_PATH):
+            shutil.rmtree(CHROMA_DB_PATH)  # Remove completamente o banco
+            time.sleep(2)  # Aguarda para garantir que o SO finalize a remoção
         
-        # 3. Criar um novo diretório vazio
-        os.makedirs(path)
+        # 3️⃣ Criar a pasta novamente antes de inicializar o cliente
+        os.makedirs(CHROMA_DB_PATH, exist_ok=True)
 
-        # 4. Resetar o estado do Streamlit para evitar reprocessamento do último arquivo
-        st.session_state.clear()
-        st.session_state["messages"] = []
-
-        # 5. Criar um novo cliente do ChromaDB
-        chroma_client = chromadb.PersistentClient(path=path)
-
-        # 6. Criar uma nova coleção
+        # 4️⃣ Criar um novo cliente e coleção
+        chroma_client = chromadb.PersistentClient(path=CHROMA_DB_PATH)
         chroma_client.get_or_create_collection(name="document_embeddings")
 
-        # 7. Informar sucesso e reiniciar o app
+        # 5️⃣ Informar sucesso e reiniciar o app
         st.success("Banco de dados resetado com sucesso!")
-        st.rerun()  # Reinicia o app para garantir que tudo foi recriado corretamente
+        st.rerun()  # Reinicia o app para evitar erros de estado
 
     except Exception as e:
         st.error(f"Erro ao limpar banco de dados: {e}")
@@ -164,7 +161,7 @@ def reset_chromadb():
 # Botão para limpar banco de dados
 if st.sidebar.button("🗑️ Limpar banco de dados"):
     reset_chromadb()
-
+    
 # Exibir documentos armazenados
 if st.sidebar.button("📚 Ver documentos armazenados"):
     docs = collection.peek()
