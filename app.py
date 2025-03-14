@@ -53,7 +53,8 @@ st.sidebar.success("🔑 API Key inserida com sucesso!")
 
 def get_chroma_client():
     try:
-        chroma_client = chromadb.HttpClient(host="localhost", port=8000)
+        # Instancia o cliente local do ChromaDB
+        chroma_client = chromadb.Client()
         collection = chroma_client.get_or_create_collection(
             name="document_embeddings",
             embedding_function=embedding_functions.SentenceTransformerEmbeddingFunction(
@@ -64,8 +65,6 @@ def get_chroma_client():
     except Exception as e:
         st.error(f"Erro ao conectar ao ChromaDB: {e}")
         return None, None
-
-chroma_client, collection = get_chroma_client()
 
 
 # Modelo Embedding
