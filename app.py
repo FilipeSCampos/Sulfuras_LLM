@@ -163,14 +163,15 @@ if st.sidebar.button("📚 Ver documentos armazenados"):
     else:
         st.sidebar.write("Nenhum documento encontrado.")
 
-# Exibir histórico e interação com o chatbot
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
 # Input de mensagem para interação
 if prompt := st.chat_input("Faça sua pergunta sobre o documento ou qualquer assunto:"):
-    st.session_state.messages.append({"role": "user", "content": prompt})
+    # Evita adicionar mensagens duplicadas
+    if not any(msg["content"] == prompt for msg in st.session_state.messages if msg["role"] == "user"):
+        st.session_state.messages.append({"role": "user", "content": prompt})
 
     docs = collection.get()
     contextos = (
@@ -196,6 +197,7 @@ if prompt := st.chat_input("Faça sua pergunta sobre o documento ou qualquer ass
     
     Resposta detalhada:
     """
+    
     try:
         with st.spinner("Gerando resposta..."):
             resposta = client.chat.completions.create(
@@ -210,10 +212,9 @@ if prompt := st.chat_input("Faça sua pergunta sobre o documento ou qualquer ass
     except Exception as e:
         resposta = f"⚠️ Ocorreu um erro ao acessar o Groq: {str(e)}"
 
-    st.session_state.messages.append({"role": "assistant", "content": resposta})
-    st.rerun()  # Força a reexecução para atualizar a exibição
+    # Evita adicionar respostas duplicadas
+    if not any(msg["content"] == resposta for msg in st.session_state.messages if msg["role"] == "assistant"):
+        st.session_state.messages.append({"role": "assistant", "content": resposta})
 
-# Loop para exibir todas as mensagens (executado após o input e a reexecução)
-for message in st.session_state.messages:
-    with st.chat_message(message["role"]):
-        st.markdown(message["content"])
+    # Atualiza a interface para exibir a nova resposta
+    st.rerun()
