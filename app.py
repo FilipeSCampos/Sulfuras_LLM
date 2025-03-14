@@ -125,17 +125,30 @@ if uploaded_file:
     else:
         st.sidebar.error("Não foi possível extrair texto do documento.")
 
-def clear_chromadb_collection():
+def delete_chromadb_collection():
     try:
-        # Deletar todos os documentos da coleção
-        collection.delete(where={})  # Apaga todos os itens sem precisar de IDs específicos
-        st.success("Todos os documentos foram removidos do banco de dados!")
+        chroma_client.delete_collection(name="document_embeddings")
+        st.success("Coleção 'document_embeddings' excluída com sucesso!")
     except Exception as e:
-        st.error(f"Erro ao limpar coleção: {e}")
+        st.error(f"Erro ao excluir a coleção: {e}")
 
-# Botão para limpar documentos do banco de dados
-if st.sidebar.button("🗑️ Limpar documentos do banco"):
-    clear_chromadb_collection()
+def recreate_chromadb_collection():
+    try:
+        global collection  # Certifique-se de que 'collection' seja acessível globalmente
+        collection = chroma_client.get_or_create_collection(
+            name="document_embeddings",
+            embedding_function=embedding_functions.SentenceTransformerEmbeddingFunction(
+                model_name="all-MiniLM-L6-v2"
+            )
+        )
+        st.success("Coleção 'document_embeddings' recriada com sucesso!")
+    except Exception as e:
+        st.error(f"Erro ao recriar a coleção: {e}")
+
+if st.sidebar.button("🗑️ Limpar banco de dados"):
+    delete_chromadb_collection()
+    recreate_chromadb_collection()
+
 
 # Exibir documentos armazenados
 if st.sidebar.button("📚 Ver documentos armazenados"):
