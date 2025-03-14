@@ -53,7 +53,7 @@ if not groq_api_key:
         Orientador: M.e Weslley Rodrigues.
         """)
     with col_imagem:
-        st.image("assets\sulfurs.webp", use_container_width=True)
+        st.image("assets/sulfurs.webp", use_container_width=True)
     st.stop()
 
 client = Groq(api_key=groq_api_key)
