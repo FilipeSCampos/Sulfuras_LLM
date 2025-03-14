@@ -14,6 +14,7 @@ from docx import Document
 import os
 import asyncio
 import shutil
+import time
 
 # Configurar event loop (para evitar warnings com asyncio)
 try:
@@ -101,7 +102,9 @@ embed_model = load_embedding_model()
 def get_chroma_client():
     path = "./chromadb"
     if not os.path.exists(path):
-        os.makedirs(path)  # Cria o diretório se não existir
+        os.makedirs(path)  # Recria a pasta se não existir
+        time.sleep(1)  # Aguarda um momento para garantir que a pasta seja criada
+
     client = chromadb.PersistentClient(path=path)
     return client
 
