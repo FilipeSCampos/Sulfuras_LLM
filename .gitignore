@@ -2,6 +2,7 @@
 __pycache__/
 *.py[cod]
 *.so
+*.pyc
 
 # Virtual environments
 .venv/
@@ -29,3 +30,8 @@ logs_secundarios/
 
 # LLM checkpoints or vector stores
 chroma_db/
+
+# Packaging
+*.egg-info/
+dist/
+build/
