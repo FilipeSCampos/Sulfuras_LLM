@@ -6,9 +6,9 @@ Sulfuras é um chatbot inteligente desenvolvido para compreender documentos dive
 
 - Filipe S. Campos
 - Rafael Canuto
-- Tatiana H.
-- Hermes
-- Vinicius
+- Tatiana Hanada
+- Hermes Winarski
+- Vinicius Magrinelli
 
 **Orientador:** M.e Weslley Rodrigues
 

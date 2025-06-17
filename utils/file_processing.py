@@ -1,15 +1,19 @@
 # utils/file_processing.py
 
 import fitz
-from docx import Document
 import pandas as pd
+from docx import Document
+
 
 def process_document(uploaded_file):
     if uploaded_file.type == "application/pdf":
         doc = fitz.open(stream=uploaded_file.read(), filetype="pdf")
         text = "".join(page.get_text() for page in doc)
         doc.close()
-    elif uploaded_file.type == "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+    elif (
+        uploaded_file.type == "application/vnd.openxmlformats-"
+        "officedocument.wordprocessingml.document"
+    ):
         doc = Document(uploaded_file)
         text = "\n".join(p.text for p in doc.paragraphs)
     elif uploaded_file.type == "text/csv":
