@@ -1,8 +1,8 @@
 # Byte-compiled / cache
 __pycache__/
-*.py[cod]
-*.so
 *.pyc
+*.bin
+*.sqlite3
 
 # Virtual environments
 .venv/
