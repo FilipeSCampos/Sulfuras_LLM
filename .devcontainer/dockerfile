@@ -1,0 +1,34 @@
+# Usa a imagem base do devcontainer
+FROM mcr.microsoft.com/devcontainers/python:1-3.11-bullseye
+
+# Atualiza os pacotes e instala dependências para compilar o SQLite
+RUN apt-get update && apt-get install -y \
+    wget \
+    build-essential \
+    libreadline-dev \
+    libsqlite3-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Baixa, compila e instala o SQLite 3.41.2
+RUN wget https://www.sqlite.org/2023/sqlite-autoconf-3410200.tar.gz && \
+    tar xzf sqlite-autoconf-3410200.tar.gz && \
+    cd sqlite-autoconf-3410200 && \
+    ./configure --prefix=/usr/local && \
+    make && \
+    make install && \
+    cd .. && rm -rf sqlite-autoconf-3410200*
+
+# Garante que o Python use a nova versão
+ENV LD_LIBRARY_PATH="/usr/local/lib:${LD_LIBRARY_PATH}"
+ENV PATH="/usr/local/bin:${PATH}"
+
+# Define diretório de trabalho
+WORKDIR /workspace
+
+# Copia o arquivo de requirements para dentro da imagem
+COPY requirements.txt .
+
+# Atualiza o pip e instala os requirements
+RUN pip install --upgrade pip
+RUN pip install --no-cache-dir -r requirements.txt
+
