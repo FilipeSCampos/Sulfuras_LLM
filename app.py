@@ -18,9 +18,8 @@ from utils.chroma_client import (
     get_chroma_client,
     get_or_create_collection,
 )
-from utils.file_processing import process_document
 from utils.logging_manager import log_interaction
-from utils.loggins_db import create_user, initialize_db, validate_user
+from utils.logins_db import create_user, initialize_db, validate_user
 
 # Redefine o módulo sqlite3 para usar pysqlite3
 __import__("pysqlite3")
@@ -122,7 +121,8 @@ def save_feedback(feedback_data: Dict):
     """Salva feedback do usuário em arquivo JSON."""
     try:
         with open("feedback_log.json", "a", encoding="utf-8") as f:
-            f.write(json.dumps(feedback_data, ensure_ascii=False, indent=2) + "\n")
+            json_str = json.dumps(feedback_data, ensure_ascii=False, indent=2)
+            f.write(json_str + "\n")
     except Exception as e:
         st.error(f"Erro ao salvar feedback: {str(e)}")
 
@@ -362,8 +362,8 @@ def render_sidebar():
         st.subheader("📂 Carregar Documentos")
         uploaded_file = st.file_uploader(
             "Selecione um arquivo",
-            type=["pdf", "docx", "csv"],
-            help="Formatos suportados: PDF, DOCX, CSV",
+            type=["pdf", "docx", "csv", "txt", "html"],
+            help="Formatos suportados: PDF, DOCX, CSV, TXT, HTML",
         )
 
         if uploaded_file and st.session_state.sentence_transformer:
@@ -385,7 +385,18 @@ def process_uploaded_file(uploaded_file):
     """Processa o arquivo carregado."""
     try:
         with st.spinner("📖 Processando documento..."):
-            text = process_document(uploaded_file)
+            from utils.file_processing import process_document
+            from utils.file_processors.html_loader import load_html
+            from utils.file_processors.txt_loader import load_txt
+
+            file_extension = uploaded_file.name.split(".")[-1].lower()
+
+            if file_extension == "txt":
+                text = load_txt(uploaded_file)
+            elif file_extension == "html":
+                text = load_html(uploaded_file)
+            else:
+                text = process_document(uploaded_file)
 
             if text:
                 # Gera embeddings
