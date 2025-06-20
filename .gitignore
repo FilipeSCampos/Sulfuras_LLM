@@ -1,3 +1,40 @@
-venv
+# Byte-compiled / cache
+__pycache__/
+*.pyc
+*.bin
+*.sqlite3
+
+# Virtual environments
+.venv/
+env/
+venv/
+
+# VSCode settings
+.vscode/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+logs_secundarios/
+
+# Environment and secrets
 .env
-venv
+.env.*
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# LLM checkpoints or vector stores
+chroma_db/
+
+# Packaging
+*.egg-info/
+dist/
+build/
+login.db
+login.db
+chat_history.json
