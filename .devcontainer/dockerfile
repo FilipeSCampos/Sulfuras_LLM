@@ -25,10 +25,11 @@ ENV PATH="/usr/local/bin:${PATH}"
 # Define diretório de trabalho
 WORKDIR /workspace
 
-# Copia o arquivo de requirements para dentro da imagem
-COPY requirements.txt .
+# Copia o requirements da raiz do projeto
+COPY ../requirements.txt ./requirements.txt
 
 # Atualiza o pip e instala os requirements
 RUN pip install --upgrade pip
 RUN pip install --no-cache-dir -r requirements.txt
+
 

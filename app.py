@@ -1,6 +1,7 @@
 # -------------------- IMPORTS PADRÃO --------------------
 import asyncio
 import json
+import os
 import sys
 from datetime import datetime
 from typing import Dict, List
@@ -12,6 +13,11 @@ from sentence_transformers import SentenceTransformer
 # -------------------- IMPORTS LOCAIS (PROJETO) --------------------
 from config import MODEL_NAME
 from utils.api_key import initialize_api_key
+from utils.chat_history import (
+    carregar_conversas_por_chat,
+    exportar_conversa_para_csv,
+    salvar_conversa_por_chat,
+)
 from utils.chat_manager import create_new_chat, delete_chat, load_chats, save_chats
 from utils.chroma_client import (
     delete_and_recreate_collection,
@@ -380,6 +386,36 @@ def render_sidebar():
         if st.button("🗑️ Limpar Base", use_container_width=True):
             clear_database()
 
+        if st.session_state.current_chat:
+            st.divider()
+            st.subheader("🕓 Histórico e Exportação")
+
+            if st.button("📜 Ver Histórico", use_container_width=True):
+                historico = carregar_conversas_por_chat(st.session_state.current_chat)
+                if historico:
+                    st.success(f"✅ {len(historico)} interações salvas:")
+                    for i, item in enumerate(historico):
+                        st.markdown(f"**{i+1}. {item['timestamp']}**")
+                        st.markdown(f"- **Usuário:** {item['usuario']}")
+                        st.markdown(f"- **Assistente:** {item['assistente']}")
+                        st.markdown("---")
+                else:
+                    st.info("Nenhum histórico encontrado para este chat.")
+
+            if st.button("📤 Exportar para CSV", use_container_width=True):
+                caminho = exportar_conversa_para_csv(st.session_state.current_chat)
+                if caminho:
+                    with open(caminho, "rb") as f:
+                        st.download_button(
+                            label="⬇️ Baixar CSV",
+                            data=f,
+                            file_name=os.path.basename(caminho),
+                            mime="text/csv",
+                            use_container_width=True,
+                        )
+                else:
+                    st.warning("⚠️ Nenhum histórico disponível para exportar.")
+
 
 def process_uploaded_file(uploaded_file):
     """Processa o arquivo carregado."""
@@ -668,6 +704,9 @@ def handle_user_message(prompt: str, mensagens: List[Dict]):
 
     # Adiciona resposta do assistente
     mensagens.append({"role": "assistant", "content": resposta})
+
+    # ✅ Salva o histórico desse chat individualmente
+    salvar_conversa_por_chat(st.session_state.current_chat, prompt, resposta)
 
     # Log da resposta
     log_interaction(

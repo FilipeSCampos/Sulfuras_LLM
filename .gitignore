@@ -37,3 +37,4 @@ dist/
 build/
 login.db
 login.db
+chat_history.json
