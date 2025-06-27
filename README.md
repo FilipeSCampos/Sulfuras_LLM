@@ -4,11 +4,11 @@ Sulfuras é um chatbot inteligente desenvolvido para compreender documentos dive
 
 ## 🎓 Autores
 
-- Filipe S. Campos
-- Rafael Canuto
+- Filipe S.
+- Rafael C.
 - Tatiana H.
-- Hermes
-- Vinicius
+- Hermes W.
+- Vinicius M.
 
 **Orientador:** M.e Weslley Rodrigues
 
@@ -33,9 +33,6 @@ O projeto é estruturado da seguinte maneira:
 ### Embeddings e Armazenamento Vetorial:
 - **Sentence-Transformers (all-MiniLM-L6-v2):** Gera representações vetoriais de documentos e consultas.
 - **ChromaDB:** Banco de dados vetorial para armazenamento, recuperação e busca eficiente dos documentos processados.
-
-### Visualização e Análise de Dados:
-- **Pandas & Plotly:** Processamento e visualização gráfica rápida de arquivos CSV carregados.
 
 ---
 
