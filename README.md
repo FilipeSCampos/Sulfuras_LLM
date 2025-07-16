@@ -22,6 +22,8 @@ Este projeto utiliza tecnologias avançadas de NLP (Natural Language Processing)
 
 ## 🛠️ Arquitetura do Projeto
 
+<img width="1536" height="1024" alt="ChatGPT Image 26 de jun  de 2025, 20_00_28" src="https://github.com/user-attachments/assets/c3629de7-8c72-4463-b859-af8c6cb448e0" />
+
 O projeto é estruturado da seguinte maneira:
 
 ### Interface do Usuário:
